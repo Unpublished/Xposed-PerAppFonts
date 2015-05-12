@@ -1,17 +1,8 @@
 package com.zst.xposed.perappfonts.lists;
 
-import java.text.Collator;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map.Entry;
-
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Context;
-import android.content.SharedPreferences;
 import android.content.res.Resources;
 import android.graphics.Color;
 import android.graphics.Typeface;
@@ -31,20 +22,30 @@ import com.zst.xposed.perappfonts.R;
 import com.zst.xposed.perappfonts.helpers.FontHelper;
 import com.zst.xposed.perappfonts.helpers.FontLoader;
 
+import java.text.Collator;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map.Entry;
+
 public class FontAdapter extends BaseAdapter implements Filterable {
 
-	private Handler mHandler;
-	private Context mContext;
-	private Resources mRes;
+	private final Handler mHandler;
+	private final Activity mActivity;
+	private final Context mContext;
+	private final Resources mRes;
 	protected List<FontItem> mFontsList = null;
-	protected List<FontItem> mFilteredFontsList = new LinkedList<FontItem>();
-	private LayoutInflater mLayoutInflater;
-	private FontLoader mFontLoader;
+	protected List<FontItem> mFilteredFontsList = new LinkedList<>();
+	private final LayoutInflater mLayoutInflater;
+	private final FontLoader mFontLoader;
 
 	@SuppressLint("WorldReadableFiles")
 	@SuppressWarnings("deprecation")
-	public FontAdapter(Context context, FontLoader ldr) {
-		mContext = context;
+	public FontAdapter(Activity activity, FontLoader ldr) {
+		mActivity = activity;
+		mContext = activity.getApplicationContext();
 		mRes = mContext.getResources();
 		mHandler = new Handler();
 		mLayoutInflater = (LayoutInflater) mContext.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
@@ -52,22 +53,22 @@ public class FontAdapter extends BaseAdapter implements Filterable {
 	}
 
 	public void update(final View progressbar) {
-		new Thread(new Runnable() {
+		mActivity.runOnUiThread(new Runnable() {
 			@Override
 			public void run() {
 				synchronized (mFilteredFontsList) {
 					mFilteredFontsList.clear();
-					List<FontItem> temporaryList = new LinkedList<FontItem>();
+					List<FontItem> temporaryList = new LinkedList<>();
 					mFilteredFontsList = temporaryList;
 					notifyDataSetChangedOnHandler();
-					Iterator<Entry<String, Typeface>> entrySetIter = mFontLoader.map.entrySet().iterator();
-					while (entrySetIter.hasNext()) {
-						Entry<String, Typeface> font = entrySetIter.next();
+					for (Entry<String, Typeface> font : mFontLoader.map.entrySet())
+					{
 						FontItem item = new FontItem();
 						item.title = font.getKey();
 						item.filename = font.getKey();
 						item.font = font.getValue();
-						if (font.getKey().endsWith(Common.SETTINGS_SUFFIX_INCOMPATIBLE)) {
+						if (font.getKey().endsWith(Common.SETTINGS_SUFFIX_INCOMPATIBLE))
+						{
 							item.disable = true;
 						}
 						temporaryList.add(item);
@@ -92,7 +93,7 @@ public class FontAdapter extends BaseAdapter implements Filterable {
 					toggleProgressBarVisible(progressbar, false);
 				}
 			}
-		}).start();
+		});//.start();
 	}
 
 	private void toggleProgressBarVisible(final View v, final boolean b) {
@@ -176,7 +177,7 @@ public class FontAdapter extends BaseAdapter implements Filterable {
 															// of a filtering
 															// operation in
 															// values
-				List<FontItem> temporaryList = new LinkedList<FontItem>();
+				List<FontItem> temporaryList = new LinkedList<>();
 
 				if (mFontsList == null) {
 					mFontsList = mFilteredFontsList;
